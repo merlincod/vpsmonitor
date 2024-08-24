@@ -28,7 +28,7 @@
    git clone https://github.com/merlincod/vpsmonitor.git
    cd vpsmonitor
    npm install
-    node app.js
+    npm start
    ```
 Check le dashboard :
 Ouvre ton navigateur à l'adresse suivante :
