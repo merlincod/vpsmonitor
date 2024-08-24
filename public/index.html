@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Moniteur VPS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+
+
+:root {
+    --primary-color: #4a90e2;
+    --secondary-color: #7b61ff;
+    --background-color: #f5f7fa;
+    --card-background: #ffffff;
+    --text-color: #333;
+    --text-light: #666;
+    --success-color: #34d058;
+    --warning-color: #f85149;
+    --border-radius: 0px; 
+    --shadow-light: rgba(0, 0, 0, 0.05);
+    --shadow-heavy: rgba(0, 0, 0, 0.15);
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+.dashboard {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.stat-card {
+    background: var(--card-background);
+    border-radius: var(--border-radius); 
+    padding: 20px;
+    box-shadow: 0 4px 10px var(--shadow-light);
+    transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+    border-left: 4px solid var(--primary-color);
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card:before {
+    content: "";
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    opacity: 0.05;
+    pointer-events: none;
+    transform: rotate(25deg);
+    transition: transform 0.5s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 12px 20px var(--shadow-heavy);
+    background-color: var(--secondary-color);
+    color: #fff;
+}
+
+.stat-card:hover:before {
+    transform: rotate(0deg);
+    opacity: 0.1;
+}
+
+.stat-title {
+    font-size: 1rem;
+    color: var(--text-light);
+    margin-bottom: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: color 0.3s ease;
+}
+
+.stat-card:hover .stat-title {
+    color: #fff;
+}
+
+.stat-value {
+    font-size: 2rem;
+    font-weight: 600;
+    color: var(--primary-color);
+    margin-bottom: 10px;
+    transition: color 0.3s ease;
+}
+
+.stat-card:hover .stat-value {
+    color: #fff;
+}
+
+.chart-container {
+    position: relative;
+    height: 150px;
+    margin-top: 15px;
+}
+
+.footer {
+    margin-top: auto;
+    text-align: center;
+    padding: 20px;
+    color: var(--text-light);
+    font-size: 0.9rem;
+    background-color: var(--card-background);
+    border-radius: var(--border-radius); 
+    box-shadow: 0 4px 10px var(--shadow-light);
+}
+
+@media (max-width: 768px) {
+    .dashboard {
+        grid-template-columns: 1fr;
+    }
+}
+
+    </style>
+</head>
+<body>
+    <div class="dashboard">
+        <div class="stat-card">
+            <h2 class="stat-title">Utilisation CPU</h2>
+            <div class="stat-value" id="cpuValue">0%</div>
+            <div class="chart-container">
+                <canvas id="cpuChart"></canvas>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h2 class="stat-title">Utilisation Mémoire</h2>
+            <div class="stat-value" id="memoryValue">0 GB</div>
+            <div class="chart-container">
+                <canvas id="memoryChart"></canvas>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h2 class="stat-title">Utilisation Disque</h2>
+            <div class="stat-value" id="diskValue">0 GB</div>
+            <div class="chart-container">
+                <canvas id="diskChart"></canvas>
+            </div>
+        </div>
+        <div class="stat-card">
+            <h2 class="stat-title">Temps de fonctionnement</h2>
+            <div class="stat-value" id="uptimeValue">0 jours</div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2024 Moniteur VPS Avancé. Tous droits réservés.</p>
+    </footer>
+
+    <script>
+        function createLineChart(ctx, label, color) {
+            return new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: label,
+                        data: [],
+                        borderColor: color,
+                        tension: 0.4,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            max: 100
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false }
+                    }
+                }
+            });
+        }
+
+        const cpuChart = createLineChart(document.getElementById('cpuChart').getContext('2d'), 'CPU', '#4361ee');
+        const memoryChart = createLineChart(document.getElementById('memoryChart').getContext('2d'), 'Mémoire', '#3a0ca3');
+        const diskChart = createLineChart(document.getElementById('diskChart').getContext('2d'), 'Disque', '#4cc9f0');
+
+        function updateChart(chart, value) {
+            chart.data.labels.push(new Date().toLocaleTimeString());
+            chart.data.datasets[0].data.push(value);
+            
+            if (chart.data.labels.length > 10) {
+                chart.data.labels.shift();
+                chart.data.datasets[0].data.shift();
+            }
+            
+            chart.update();
+        }
+
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / (3600 * 24));
+            const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            return `${days}j ${hours}h ${minutes}m`;
+        }
+
+        async function updateStats() {
+            try {
+                const response = await fetch('/api/stats');
+                if (!response.ok) throw new Error('Erreur réseau');
+                const data = await response.json();
+
+                console.log('Données reçues:', data);
+
+                const cpuUsage = parseFloat(data.cpu_usage);
+                const memoryUsed = parseFloat(data.memory_used);
+                const memoryTotal = parseFloat(data.memory_total);
+                const diskUsed = parseFloat(data.disk_used);
+                const diskTotal = parseFloat(data.disk_total);
+                const uptime = parseInt(data.uptime);
+
+                const memoryUsagePercent = (memoryUsed / memoryTotal) * 100;
+                const diskUsagePercent = (diskUsed / diskTotal) * 100;
+
+                document.getElementById('cpuValue').textContent = `${cpuUsage.toFixed(1)}%`;
+                document.getElementById('memoryValue').textContent = `${memoryUsed.toFixed(1)} / ${memoryTotal.toFixed(1)} GB`;
+                document.getElementById('diskValue').textContent = `${diskUsed.toFixed(1)} / ${diskTotal.toFixed(1)} GB`;
+                document.getElementById('uptimeValue').textContent = formatUptime(uptime);
+
+                updateChart(cpuChart, cpuUsage);
+                updateChart(memoryChart, memoryUsagePercent);
+                updateChart(diskChart, diskUsagePercent);
+
+            } catch (error) {
+                console.error('Erreur lors de la récupération des statistiques:', error);
+            }
+        }
+
+        updateStats();
+        setInterval(updateStats, 5000);
+    </script>
+</body>
+</html>
