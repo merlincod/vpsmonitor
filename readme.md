@@ -35,9 +35,8 @@ http://localhost:8000 ou
 http://ipdetonvps:8000
 
 ## 🗂️ Structure du Projet
-public/index.html : La vue principale pour ton dashboard.
-public/style.css : Les styles bien stylés.
-app.js : Le backend qui gère les stats du système avec Node.js.
+public/index.html : La vue principale pour ton dashboard avec le css dedans.
+server.js : Le backend qui gère les stats du système avec Node.js.
 package.json : Parce qu'on aime savoir quelles dépendances on utilise.
 
 ## 🌍 Déploiement en Prod
