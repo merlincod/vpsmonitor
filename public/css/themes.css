@@ -1,0 +1,55 @@
+:root[data-theme="light"] {
+    --primary-color: #4a90e2;
+    --secondary-color: #7b61ff;
+    --background-color: #f0f2f5;
+    --card-background: #ffffff;
+    --text-color: #333;
+    --text-light: #666;
+    --success-color: #34d058;
+    --warning-color: #f85149;
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    --hover-color: #e9ecef;
+    --chart-text: #333333;
+}
+
+:root[data-theme="dark"] {
+    --primary-color: #6ea8fe;
+    --secondary-color: #9d8cff;
+    --background-color: #1a1d21;
+    --card-background: #22262a;
+    --text-color: #e1e3e5;
+    --text-light: #9ca3af;
+    --success-color: #3fb950;
+    --warning-color: #f85149;
+    --sidebar-width: 250px;
+    --header-height: 60px;
+    --hover-color: #2c3135;
+    --chart-text: #e1e3e5;
+}
+
+.theme-switch {
+    display: flex;
+    align-items: center;
+    margin-top: auto;
+    padding: 15px;
+    cursor: pointer;
+    color: var(--text-color);
+    transition: color 0.3s ease;
+}
+
+.theme-switch:hover {
+    color: var(--primary-color);
+}
+
+.theme-switch-icon {
+    margin-right: 10px;
+    font-size: 20px;
+}
+
+.card-value {
+    color: var(--text-color);
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0.5rem 0;
+}

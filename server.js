@@ -6,6 +6,15 @@ const port = 8000;
 
 app.use(express.static('public'));
 
+function formatBytes(bytes, decimals = 2) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const dm = decimals < 0 ? 0 : decimals;
+    const sizes = ['B', 'KB', 'MB', 'GB', 'TB', 'PB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(dm))} ${sizes[i]}`;
+}
+
 app.get('/api/stats', async (_, res) => {
     try {
         const [cpuLoad, memory, disk, time, osInfo, cpuInfo, cpuTemp, networkInterfaces, processes, fsStats] = await Promise.all([
@@ -25,7 +34,10 @@ app.get('/api/stats', async (_, res) => {
             os: {
                 platform: osInfo.platform,
                 distro: osInfo.distro,
-                release: osInfo.release
+                release: osInfo.release,
+                arch: osInfo.arch,
+                hostname: osInfo.hostname,
+                kernel: osInfo.kernel
             },
             cpu: {
                 manufacturer: cpuInfo.manufacturer,
@@ -33,7 +45,10 @@ app.get('/api/stats', async (_, res) => {
                 speed: cpuInfo.speed + ' GHz',
                 cores: cpuInfo.cores,
                 physicalCores: cpuInfo.physicalCores,
-                temperature: cpuTemp.main ? cpuTemp : 'N/A'
+                temperature: cpuTemp.main ? {
+                    main: cpuTemp.main.toFixed(1),
+                    cores: cpuTemp.cores?.map(temp => temp.toFixed(1)) || []
+                } : 'N/A'
             },
             cpu_usage: cpuLoad.currentLoad.toFixed(2),
             memory_total: (memory.total / (1024 ** 3)).toFixed(2),
@@ -44,17 +59,22 @@ app.get('/api/stats', async (_, res) => {
             network: networkInterfaces.map(net => ({
                 iface: net.iface,
                 ip4: net.ip4,
-                speed: net.speed ? `${net.speed} Mbps` : 'N/A'
+                ip6: net.ip6,
+                speed: net.speed ? `${net.speed} Mbps` : 'N/A',
+                type: net.type,
+                operstate: net.operstate
             })),
             processes: {
                 total: processes.all,
-                running: processes.running
+                running: processes.running,
+                blocked: processes.blocked,
+                sleeping: processes.sleeping
             },
             fs_stats: {
-                rx: (fsStats.rx / (1024 ** 2)).toFixed(2) + ' MB',
-                wx: (fsStats.wx / (1024 ** 2)).toFixed(2) + ' MB',
-                tx_sec: (fsStats.tx_sec / (1024 ** 2)).toFixed(2) + ' MB/s',
-                rx_sec: (fsStats.rx_sec / (1024 ** 2)).toFixed(2) + ' MB/s'
+                rx: formatBytes(fsStats.rx),
+                wx: formatBytes(fsStats.wx),
+                tx_sec: formatBytes(fsStats.tx_sec) + '/s',
+                rx_sec: formatBytes(fsStats.rx_sec) + '/s'
             }
         };
 

@@ -5,22 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard VPS Avancé</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link href="css/themes.css" rel="stylesheet">
+    <link href="css/stats.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.11.4/gsap.min.js"></script>
     <style>
-        :root {
-            --primary-color: #4a90e2;
-            --secondary-color: #7b61ff;
-            --background-color: #f0f2f5;
-            --card-background: #ffffff;
-            --text-color: #333;
-            --text-light: #666;
-            --success-color: #34d058;
-            --warning-color: #f85149;
-            --sidebar-width: 250px;
-            --header-height: 60px;
-        }
-
         body, html {
             font-family: 'Poppins', sans-serif;
             margin: 0;
@@ -28,6 +17,7 @@
             background-color: var(--background-color);
             color: var(--text-color);
             height: 100%;
+            transition: background-color 0.3s ease, color 0.3s ease;
         }
 
         .container {
@@ -42,6 +32,7 @@
             padding: 20px;
             display: flex;
             flex-direction: column;
+            transition: background-color 0.3s ease;
         }
 
         .logo {
@@ -49,18 +40,6 @@
             font-weight: 600;
             color: var(--primary-color);
             margin-bottom: 30px;
-        }
-
-        .nav-item {
-            padding: 10px 15px;
-            margin-bottom: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .nav-item:hover {
-            background-color: var(--background-color);
         }
 
         .main-content {
@@ -76,6 +55,7 @@
             align-items: center;
             padding: 0 20px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease;
         }
 
         .dashboard {
@@ -90,6 +70,11 @@
             padding: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
         }
 
         .card-title {
@@ -106,17 +91,6 @@
 
         #os-card, #cpu-info-card, #cpu-temp-card, #network-card, #process-card, #fs-stats-card {
             grid-column: span 2;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .inline-info {
-            font-size: 16px;
-            font-weight: 400;
-            color: var(--text-color);
-            text-align: center;
         }
 
         @media (max-width: 768px) {
@@ -134,20 +108,26 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <aside class="sidebar">
-            <div class="logo">VPS Monitor</div>
-            <nav>
-                <div class="nav-item">Dashboard</div>
-                <div class="nav-item">Statistiques</div>
-                <div class="nav-item">Paramètres</div>
-                <div class="nav-item">Aide</div>
-            </nav>
-        </aside>
-        <main class="main-content">
-            <header class="header">
-                <h1>Dashboard VPS</h1>
-            </header>
+<div class="container">
+    <aside class="sidebar">
+        <div class="logo">VPS Monitor</div>
+        <nav>
+            <div class="nav-item active" data-view="dashboard">Dashboard</div>
+            <div class="nav-item" data-view="stats">Statistiques</div>
+            <div class="nav-item" data-view="settings">Paramètres</div>
+            <div class="nav-item" data-view="help">Aide</div>
+        </nav>
+        <div class="theme-switch" onclick="themeManager.toggle()">
+            <span id="theme-icon" class="theme-switch-icon">🌙</span>
+            <span>Changer de thème</span>
+        </div>
+    </aside>
+    <main class="main-content">
+        <header class="header">
+            <h1>Dashboard VPS</h1>
+        </header>
+
+        <div id="dashboard-view" class="view">
             <div class="dashboard">
                 <div class="card" id="cpu-card">
                     <div class="card-title">Utilisation CPU</div>
@@ -203,111 +183,86 @@
                     <div class="card-value" id="fsStatsValue">N/A</div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
 
-    <script>
-        function createPieChart(ctx, labels, colors) {
-            return new Chart(ctx, {
-                type: 'pie',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        data: [],
-                        backgroundColor: colors
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'bottom'
-                        }
-                    }
-                }
-            });
+        <div id="stats-view" class="view">
+            <div id="detailed-stats"></div>
+        </div>
+
+        <div id="settings-view" class="view">
+            <div class="card">
+                <h2>Paramètres</h2>
+                <p>Configuration du moniteur VPS</p>
+            </div>
+        </div>
+
+        <div id="help-view" class="view">
+            <div class="card">
+                <h2>Aide</h2>
+                <p>Guide d'utilisation du moniteur VPS</p>
+            </div>
+        </div>
+    </main>
+</div>
+
+<script src="js/theme.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/stats.js"></script>
+<script>
+    const chartManager = new ChartManager();
+
+    async function updateStats() {
+        try {
+            const response = await fetch('/api/stats');
+            if (!response.ok) throw new Error('Erreur réseau');
+
+            const data = await response.json();
+            console.log('Données reçues:', data);
+
+            const cpuUsage = parseFloat(data.cpu_usage);
+            const memoryUsed = parseFloat(data.memory_used);
+            const memoryTotal = parseFloat(data.memory_total);
+            const diskUsed = parseFloat(data.disk_used);
+            const diskTotal = parseFloat(data.disk_total);
+            const uptime = parseInt(data.uptime);
+
+            const os = `${data.os.platform} ${data.os.distro} ${data.os.release}`;
+            const cpuInfo = `${data.cpu.manufacturer} ${data.cpu.brand} @ ${data.cpu.speed}, Cores: ${data.cpu.cores}`;
+            const cpuTemp = data.cpu.temperature.main ? `${data.cpu.temperature.main}°C` : 'N/A';
+            const network = data.network.map(iface => `${iface.iface} (${iface.ip4}): ${iface.speed}`).join(', ');
+            const processes = `Total: ${data.processes.total}, Running: ${data.processes.running}`;
+            const fsStats = `Rx: ${data.fs_stats.rx}, Wx: ${data.fs_stats.wx}, Tx/sec: ${data.fs_stats.tx_sec}, Rx/sec: ${data.fs_stats.rx_sec}`;
+
+            document.getElementById('cpuValue').textContent = cpuUsage.toFixed(2) + '%';
+            document.getElementById('memoryValue').textContent = `${memoryUsed.toFixed(2)} / ${memoryTotal.toFixed(2)} GB`;
+            document.getElementById('diskValue').textContent = `${diskUsed.toFixed(2)} / ${diskTotal.toFixed(2)} GB`;
+            document.getElementById('uptimeValue').textContent = formatUptime(uptime);
+            document.getElementById('osValue').textContent = os;
+            document.getElementById('cpuInfoValue').textContent = cpuInfo;
+            document.getElementById('cpuTempValue').textContent = cpuTemp;
+            document.getElementById('networkValue').textContent = network;
+            document.getElementById('processValue').textContent = processes;
+            document.getElementById('fsStatsValue').textContent = fsStats;
+
+            chartManager.updateData('cpu', cpuUsage, 100);
+            chartManager.updateData('memory', memoryUsed, memoryTotal);
+            chartManager.updateData('disk', diskUsed, diskTotal);
+
+        } catch (error) {
+            console.error('Erreur lors de la mise à jour des statistiques:', error);
         }
+    }
 
-        const cpuChart = createPieChart(
-            document.getElementById('cpuChart').getContext('2d'),
-            ['Utilisé', 'Libre'],
-            ['#4361ee', '#e0e0e0']
-        );
+    function formatUptime(seconds) {
+        const days = Math.floor(seconds / (3600 * 24));
+        const hours = Math.floor((seconds % (3600 * 24)) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        return `${days}j ${hours}h ${minutes}m`;
+    }
 
-        const memoryChart = createPieChart(
-            document.getElementById('memoryChart').getContext('2d'),
-            ['Utilisé', 'Libre'],
-            ['#3a0ca3', '#e0e0e0']
-        );
-
-        const diskChart = createPieChart(
-            document.getElementById('diskChart').getContext('2d'),
-            ['Utilisé', 'Libre'],
-            ['#4cc9f0', '#e0e0e0']
-        );
-
-        async function updateStats() {
-            try {
-                const response = await fetch('/api/stats');
-                if (!response.ok) throw new Error('Erreur réseau');
-
-                const data = await response.json();
-
-                console.log('Données reçues:', data);
-
-                // Récupérer et formater les données
-                const cpuUsage = parseFloat(data.cpu_usage);
-                const memoryUsed = parseFloat(data.memory_used);
-                const memoryTotal = parseFloat(data.memory_total);
-                const diskUsed = parseFloat(data.disk_used);
-                const diskTotal = parseFloat(data.disk_total);
-                const uptime = parseInt(data.uptime);
-
-                const os = `${data.os.platform} ${data.os.distro} ${data.os.release}`;
-                const cpuInfo = `${data.cpu.manufacturer} ${data.cpu.brand || ''} @ ${data.cpu.speed}, Cores: ${data.cpu.cores}`;
-                const cpuTemp = data.cpu.temperature ? data.cpu.temperature.main + ' °C' : 'N/A';
-                const network = data.network.map(iface => `${iface.iface} (${iface.ip4}): ${iface.speed}`).join(', ');
-                const processes = `Total: ${data.processes.total}, Running: ${data.processes.running}`;
-                const fsStats = `Rx: ${data.fs_stats.rx}, Wx: ${data.fs_stats.wx}, Tx/sec: ${data.fs_stats.tx_sec}, Rx/sec: ${data.fs_stats.rx_sec}`;
-
-                // Mise à jour du DOM
-                document.getElementById('cpuValue').textContent = cpuUsage.toFixed(2) + '%';
-                document.getElementById('memoryValue').textContent = memoryUsed.toFixed(2) + ' / ' + memoryTotal.toFixed(2) + ' GB';
-                document.getElementById('diskValue').textContent = diskUsed.toFixed(2) + ' / ' + diskTotal.toFixed(2) + ' GB';
-                document.getElementById('uptimeValue').textContent = formatUptime(uptime);
-
-                document.getElementById('osValue').textContent = os;
-                document.getElementById('cpuInfoValue').textContent = cpuInfo;
-                document.getElementById('cpuTempValue').textContent = cpuTemp;
-                document.getElementById('networkValue').textContent = network;
-                document.getElementById('processValue').textContent = processes;
-                document.getElementById('fsStatsValue').textContent = fsStats;
-
-                // Mise à jour des graphiques
-                cpuChart.data.datasets[0].data = [cpuUsage, 100 - cpuUsage];
-                cpuChart.update();
-
-                memoryChart.data.datasets[0].data = [memoryUsed, memoryTotal - memoryUsed];
-                memoryChart.update();
-
-                diskChart.data.datasets[0].data = [diskUsed, diskTotal - diskUsed];
-                diskChart.update();
-
-            } catch (error) {
-                console.error('Erreur lors de la mise à jour des statistiques:', error);
-            }
-        }
-
-        function formatUptime(seconds) {
-            const days = Math.floor(seconds / (3600 * 24));
-            const hours = Math.floor((seconds % (3600 * 24)) / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            return `${days}j ${hours}h ${minutes}m`;
-        }
-
-        setInterval(updateStats, 3000);
-
-    </script>
+    setInterval(updateStats, 3000);
+    updateStats();
+</script>
 </body>
 </html>

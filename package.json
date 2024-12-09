@@ -1,13 +1,13 @@
 {
   "name": "vpsmonitor",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Un projet de Monitoring de VPS",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "^4.19.2",
+    "express": "^4.21.2",
     "systeminformation": "^5.23.5"
   },
   "author": "Merlin's Code",
